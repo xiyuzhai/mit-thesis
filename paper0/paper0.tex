@@ -27,7 +27,7 @@
 \newtheorem*{lem}{Lemma}
 \usepackage{color}
 \usepackage{CJK}
-\title{Computation-Efficient, Explainable and Robust Machine Learning for Computer Vision}
+\title{Computation-Efficient, Explainable and Robust Machine Learning for Computer Vision Based on High-Level Instruction Set Architecture (HISArchi)}
 \author{Xiyu Zhai, Alexander Rakhlin, Piotr Indyk}
 \date{}							% Activate to display a given date or no date
 
@@ -88,7 +88,50 @@ Let's target ICML or NeuRIPS, the audience of which are perhaps more varied than
 \paragraph{Vision by David Marr} Another David.
 \paragraph{Gate Search or those (not so successful) Dynamic Neural Network Search}
 \paragraph{Mathematics} p-adic distance, divisor
-\section{Model Representation Using High-Level Instruction Set Architecture}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{High-Level Instruction Set Architecture (HISArchi)}
 Instruction set architecture (ISA) is mostly a system/architecture term, but here it seems very appropriate for naming the description of our models.
 \subsection{Basic Formulism}
 We need to first clarify our notions of types, variables, and operations.
@@ -109,7 +152,14 @@ So a (legal) program in a HISArchi is a sequence of assignments with the types o
 together with a definition of inputs (naming only) and weights (naming and value).
 
 \textbf{Our hypothesis is then a subset of all such (legal) programs in a HISArchi. Our a priori knowledge is then expressed through the choice of types and operations in the HISArchi.}
-
+\begin{eg}
+The HISArchi for artificial neural networks is super simple. The simplest setup could be
+\begin{verbatim}
+	Types: scalar, tensor
+	Operations: sigma, +, tensor trace, scalar mulplication, convolution
+\end{verbatim}
+At least convolution here encodes our knowledge somehow.
+\end{eg} 
 \begin{rmk}
 	In mathematics, there is a notion of `naturalness'. Here `naturalness' can be seen as type matching. Do the appropriate things for the object with the right types.
 \end{rmk}
@@ -156,6 +206,83 @@ So here is our mechanism for advanced instruction scheduling
 		\item repeat until heap is empty.
 	\end{itemize}
 \end{itemize}
+\subsection{Three Steps of the Learning Process}
+To complete an inference program, we need to
+\begin{itemize}
+	\item first specify a High-level Instruction Set Architecture (HISArchi);
+	\item then determine a sequence of instructions
+	\item finally choose proper weights
+\end{itemize}
+\begin{eg}[Traditional Parametric Machine Learning]
+	For linear statistical learning models, the first two steps are trivial as
+	\begin{itemize}
+		\item HISArchi is just
+		\begin{verbatim}
+			Types: float, float[d]
+			Operation: dot product
+		\end{verbatim}
+		\item The sequence of instruction for input of type float[d] and output float can only be
+		\begin{verbatim}
+			V1 = input + bias
+			output = dot(input, weight)
+		\end{verbatim}
+	\end{itemize}
+
+	The only thing to consider is then how we choose proper weights.
+
+	In fact, most of traditional machine learning is about the third step.
+\end{eg}
+\begin{rmk}
+	I propose that we use "statistical learning" instead of "machine learning" whenever we don't care much about the machine, i.e., computation efficiency on a machine code level.
+\end{rmk}
+
+\begin{eg}
+	[Nonparametric Statistical Learning]
+
+	Sasha please help!
+\end{eg}
+Anything to say about Bayesian?
+\begin{eg}[Artificial Neural Networks]
+	The artificial neural networks are in fact quite a natural generalization of traditional parametric machine learning. As we have seen, it adds tensors and tensor operations into the HISArchi, and in the past years, people have tried many different (complicated) sequence of instructions (in ANN's term, neural architecture, don't confuse `architecture' here with that in ISA) for the second step, and use variants of gradient descent to seek proper weights for the third step. There are also work that tries to automate the second step (called AutoML). So ANNs are of much more power than traditional approaches, no surprise that they took over the planet.
+
+	However, artificial neural networks are limited in the first step, which inevitably restricts them to be computation-inefficient, inexplainable and not robust. We shall show how to do better, i.e., design appropriate HISArchi (patented of course, lol) for different computer vision tasks in section 5.
+\end{eg}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \section{The Husky Programming System}
 The focus is on explaining features crucial for our experiments, those reflecting only my aesthetic values and modern language design values are delayed until appendix.
