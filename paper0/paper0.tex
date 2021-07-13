@@ -219,12 +219,12 @@ To complete an inference program, we need to
 		\item HISArchi is just
 		\begin{verbatim}
 			Types: float, float[d]
-			Operation: dot product
+			Operation: +, dot product
 		\end{verbatim}
 		\item The sequence of instruction for input of type float[d] and output float can only be
 		\begin{verbatim}
 			V1 = input + bias
-			output = dot(input, weight)
+			output = dot(V1, weight)
 		\end{verbatim}
 	\end{itemize}
 
@@ -285,7 +285,11 @@ Anything to say about Bayesian?
 
 
 \section{The Husky Programming System}
-The focus is on explaining features crucial for our experiments, those reflecting only my aesthetic values and modern language design values are delayed until appendix.
+(writer's note: The focus is on explaining features crucial for our experiments, those reflecting only my aesthetic values and modern language design values are delayed until appendix.)
+
+A programming language is a translator from human-readable code to machine code, but it is not necessarily responsible for programmer's mistakes. For example, C is powerful and simple yet its type system is weak; C++ is more powerful yet is dissed by Linus Torvald; Python doesn't have declaration of variable, const, private, public; Rust is much better, but it checks only compilation errors. So to do complicated programming, one usually needs to resort on external tools.
+
+A programming system instead, is a programming language with a full set of dedicated tools with which one can comfortably programme and solve bug with minimal efforts. And husky is designed towards such a system for developing machine learning algorithms based on HISArchi for computer vision.
 \subsection{Syntax and Semantics}
 
 \paragraph{Grammar} Looks like a typed python (or tython? or huskython?), although we don't compile to python as typescript compiles to javascript.
