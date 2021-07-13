@@ -1,6 +1,6 @@
 
 %:
-\documentclass[11pt, oneside]{article}   	% use "amsart" instead of "article" for AMSLaTeX format
+\documentclass[10pt, oneside]{article}   	% use "amsart" instead of "article" for AMSLaTeX format
 \usepackage{geometry}                		% See geometry.pdf to learn the layout options. There are lots.
 \geometry{letterpaper}                   		% ... or a4paper or a5paper or ... 
 %\geometry{landscape}                		% Activate for rotated page geometry
@@ -27,12 +27,212 @@
 \newtheorem*{lem}{Lemma}
 \usepackage{color}
 \usepackage{CJK}
-\title{}
-\author{Xiyu Zhai}
+\title{Computation-Efficient, Explainable and Robust Machine Learning for Computer Vision}
+\author{Xiyu Zhai, Alexander Rakhlin, Piotr Indyk}
 \date{}							% Activate to display a given date or no date
 
 \begin{document}
 \maketitle
 \tableofcontents
+\abstract{
+	We here describe new methodologies for computation-efficient, explainable and robust machine learning for computer vision. First, we achieve drastic improvements in computation time and memory usage for both inference and training over different computer vision tasks. Second, each step of the inference and even training process is totally explainable, which can be displayed interactively using our domain-specific language called `husky' and its gui debugging framework. Last, our models are robust, which can also be argued clearly in mathematics and easily adaptable to different notions of robustness.
+}
+
+\section{Introduction}
+
+Recently significant progress has been made in learning models of high accuracy for computer vision tasks, yet it remains hard to achieve computation efficiency (both inference and training), explainability and robustness.
+We describe here new methodologies that achieve simultaneously significant improvements in \textbf{computation efficiency, explainability and robustness} with the same or higher level of accuracy for various computer vision tasks.
+
+The key of success is that our approaches explore a much wider range of possibilities than previous methods. Note that `machine learning' actually means learning something that can be run on a machine, i.e. a sequence of machine codes. In the perspective of machine code sequence, we believe that the generated inference program of existing models are quite restrictive, most notably the following two:
+\begin{itemize}
+	\item little variation in instruction execution pattern in most model, making it difficult to utilize the power of a random access machine (CPU);
+	\item the basic building blocks are (parallelable) operations on high dimensional vectors, good for Nvidia, but bad for visualization, understanding and enforcing robustness.
+\end{itemize}
+
+In contrast, we design models so that
+\begin{itemize}
+	\item instruction execution path differs greatly for different inputs, making it possible large models to run fast;
+	\item each piece is as explainable as possible, with input and output being data structures suitable for the task and the computation process involving appropriate and salient mathematical operations.
+\end{itemize}
+
+To describe these models, we need to contain both mathematical and computation information, i.e. a model can't be described simply as a mathematical function, but as a computation procedure that runs on an abstract machine (random access machine is what we mainly considered). So we introduce a framework called High-Level Instruction Set Architecture (HISArchi, it reads hisarchi, with the advantage of sounding similarly to husky) (partly inspired by LLVM IR), explained in section 3.
+
+Since the design is much more advanced, we face a higher level of engineering that is difficult to do using current programming languages and debugging tools. So we design a domain specific language and a toolchain for interactive development, training and testing. The system is named after `husky', a beautiful dog breed that fears no winter. The goals of language are
+\begin{itemize}
+	\item simplicity, conciseness and elegance
+	\item zero cost abstraction
+	\item zero code for debugging and visualization
+	\item zero delay for debugging long-running programs via snapshots
+\end{itemize}
+Much of our language design is inpired from previous languages including C, C++, python, swift, javascript, and Rust. The details are explained in section 4.
+
+Due to the complexity of the problems, it's hard to explain things abstractly. So we shall explain in section 5 the details of development, training of different computer vision tasks in an increasing order of complexity. The advantage of our models in inference and training computation efficiency can be seen immediately in the profiling data of table(TODO), but to see explainability and robustness, it's required to know more about the methodologies and even the husky language we designed and used in implemenation.
+
+In section 6, we do theories because of nothing but who we are.
+
+And then lots of words and pictures are put into appendix to fit into 10 page limit.
+
+Let's target ICML or NeuRIPS, the audience of which are perhaps more varied than CVPR, ICCV. But conference submission is really not to worry about. The goal is to explain things in a concise way within 10 pages (after doubling the column) and covers most of the project (manifestation of ownership). This should stand as a standard and concrete introduction to our methodologies. \textbf{Remember none of us is actually an expert in computer vision, programming language, or CPU, so I aim to be as succinct as possible to avoid sounding amateur.} (Probably it will be very embarrassing if this doesn't come out as a best paper of some conference, although it's not that important at all. LOL.)
+
+\section{Related Work}
+
+
+
+\paragraph{Local Sensitive Hashing} The design computation process has much similarity with LSH algorithm, which is hardly surprising (\textcolor{blue}{TODO. Say something like, LSH is very fundamental, a perfect vessel for a hybrid between machine learning and algorithms.}). Still the great difference is that in LSH, a distance plays the role of ground truth and the hashing is seen as approximation and is secondary whereas in our case, hashing might be the only one defined and is learned. (\textcolor{blue}{TODO. Say something about learned hashing papers?})
+\paragraph{Capsule} Their representation of things are problematic. Maybe we want to sweeten our words here.
+\paragraph{Pattern Theory David Mumford} Say something to avoid being scolded by Bayesian people?
+\paragraph{Deep Learning} We are just better in every aspect.
+\paragraph{Deep Learning Accelaration} Hello hardware people, deep learning is of no prospect, join us!
+\paragraph{Deep Learning Explainability} Politely diss on purely analogue computing.
+\paragraph{Deep Learning Robustness} Politely diss on purely analogue computing.
+\paragraph{Vision by David Marr} Another David.
+\paragraph{Gate Search or those (not so successful) Dynamic Neural Network Search}
+\paragraph{Mathematics} p-adic distance, divisor
+\section{Model Representation Using High-Level Instruction Set Architecture}
+Instruction set architecture (ISA) is mostly a system/architecture term, but here it seems very appropriate for naming the description of our models.
+\subsection{Basic Formulism}
+We need to first clarify our notions of types, variables, and operations.
+\paragraph{Types} A HISArchi contains only a finite set of types. Can't define new types. Mathematically, a set of types is a set of disjoint sets, i.e. a type is identified with all possible values of a variable of that type.
+\paragraph{Variables} Here any variable can only be assigned at most once, just like LLVM IR. These are four kinds of variables: input, output, weights, and intermediate variables. Input and output are placeholders and weights are predefined variables (readonly) and intermediate variables.
+\paragraph{Operations} Operations is a function with no side effects, i.e. read its inputs and give its outputs. A HISArchi contains only a finite set of types. Can't define new operations. For intel x86, the operations are mov add sub etc. For our models for different computer vision tasks, we shall have a larger but fixed set of operations containing functions more complicated than basic arithmetics, for example, segmentation, taking contour, sketching, which will be explained in the next section. \textbf{Every operation is strongly typed}, i.e. each operation comes with a specification of types and must be matched.
+
+So a (legal) program in a HISArchi is a sequence of assignments with the types of operations matching the signature of the operations:
+\begin{center}
+\begin{verbatim}
+	V1 = <operation>(<variable>...)
+	V2 = <operation>(<variable>...)
+	V3 = <operation>(<variable>...)
+	...
+	output = <operation>(<variable>...)
+\end{verbatim}
+\end{center}
+together with a definition of inputs (naming only) and weights (naming and value).
+
+\textbf{Our hypothesis is then a subset of all such (legal) programs in a HISArchi. Our a priori knowledge is then expressed through the choice of types and operations in the HISArchi.}
+
+\begin{rmk}
+	In mathematics, there is a notion of `naturalness'. Here `naturalness' can be seen as type matching. Do the appropriate things for the object with the right types.
+\end{rmk}
+
+\textbf{It might seem that there is no branching mechanism in our formulism, but actually there is.} Part of the branching is inside the high level operations (for example, we can have a quick sort operation on a vector of integers, the machine code of which has lots of branching that depends on inputs) and is in fact part of our a priori knowledge. The other part is in 'advanced instruction scheduling'.
+
+\subsection{Advanced Instruction Scheduling}
+
+We imagine our program to be large yet infer fast. So for each inference, only a small set of total instructions are touched.
+
+For example our program could be
+\begin{verbatim}
+	inputs: int x
+	V1 = (h(x) == 1) and f1(x)
+	V2 = (h(x) == 2) and f2(x)
+	V3 = (h(x) == 3) and f3(x)
+	V4 = (h(x) == 4) and f4(x)
+	V5 = (h(x) == 5) and f5(x)
+	V6 = (h(x) == 6) and f6(x)
+	V7 = (h(x) == 7) and f7(x)
+	output = V1 or V2 or V3 or V4 or V5 or V6 or V7
+\end{verbatim}
+
+where $h$ could be seen as hashing function in locality sensitive hashing.
+
+For example, if $h(x)$ is 3, we can skip all instructions except $I3$ and the final one.
+
+So here is our mechanism for advanced instruction scheduling
+\begin{itemize}
+	\item divide instructions into two parts:
+	\begin{itemize}
+		\item a minority that requires to be evaluated every time, called must-do
+		\item a majority that can be skipped most of the time, called optional; for each of these, we can determine easily from results of a small nonempty set of previous instructions, which we call the controllers of this optional.
+	\end{itemize}
+
+	Obviously, if we form a direct graph using this dependency, we get an acyclic one and the leafs are all must-dos.
+
+	We call 
+
+	\item use a heap to represent instruction sequence and use a data structure to record the results of controllers.
+	\begin{itemize}
+		\item first put must-do in the heap
+		\item pop and execute the foremost instruction in the heap, and modify the records of its controllees. If any one of its controllees receives information from all its controllers to not be skipped, add it to the heap.
+		\item repeat until heap is empty.
+	\end{itemize}
+\end{itemize}
+
+\section{The Husky Programming System}
+The focus is on explaining features crucial for our experiments, those reflecting only my aesthetic values and modern language design values are delayed until appendix.
+\subsection{Syntax and Semantics}
+
+\paragraph{Grammar} Looks like a typed python (or tython? or huskython?), although we don't compile to python as typescript compiles to javascript.
+\subsection{Compilation}
+
+
+Two modes: debug/release, very different. Our debug mode is different from gcc etc, we actually produce very different code for debug mode to enable trace recording.
+\subsection{IDE}
+
+Show a picture of the IDE.
+
+Editor:TraceView:Display.
+
+TraceView shows the execution in a tree. When focused, the editor will jump to the corresponding source code and the Display will display visual information.
+
+Shouldn't take more than one page to explain, right?
+
+\subsection{Implementation Details}
+
+Oh, say something about implementation. . Use LLVM or not. IDE is by React framework and typescript, and steals some design from Vscode. If Microsoft is displeased, I'm happy to change.
+
+But I guess here no matter what, it's going to be a complicated story about implementation. Afterall it takes me more than half a year to implement.
+
+Oh, I also have a wondrous parser framework, which I believe is the best parser ever. But this has to be put in the appendix, sadly.
+\subsection{Support for HISArchi}
+
+\textbf{The most important thing is husky's (debugging and visualization) support for HISArchi, which is not implemented at all now. We don't need this to finish mnist, but for CIFAR* and ImageNet, we need this.}
+\section{Experiments on Computer Vision Tasks}
+\subsection{MNIST}
+The operators are
+\paragraph{Segmentation}
+\paragraph{TakeBoundary}
+\paragraph{LineSegementSketch}
+\paragraph{ConvexComponentSketch}
+
+...
+
+explain the interactive developing/training process
+\subsection{CIFAR}
+just need to list more operations and how we develop/train interactively (human-in-the-loop)
+\subsection{ImageNet}list more operation
+\subsection{COCO}
+need to explain the setup for detection tasks
+\subsection{CityScrape}
+\subsection{Video tasks...}
+\subsection{3D tasks}
+\section{Theories}
+// Write down basic stuffs here to consolidate our methodologies.
+
+// proofs are put in the appendix
+\subsection{Statistics}
+generalization bounds
+\subsection{Computation}
+
+NP
+\subsection{Geometry}
+
+\subsection{Robustness}
+
+
+\clearpage
+\appendix{Appendix}
+\section{Experiment Details}
+\subsection{MNIST}
+\subsection{CIFAR}
+\subsection{ImageNet}
+\subsection{COCO}
+\subsection{CityScrape}
+\subsection{Video tasks...}
+\subsection{3D tasks}
+\section{Language Details}
+\section{Demonstration on Real Life Experiments}
+
+My dog here. Anyone else' dog is welcomed as well.
+
 
 \end{document}
